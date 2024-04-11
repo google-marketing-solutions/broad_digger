@@ -332,8 +332,6 @@ function writeRecordsInSpreadSheetCustom( custom ) {
 
           const currentElement = custom[account][campaign][keywordText];
 
-          Logger.log( currentElement );
-
           const spreadsheetCurrentRow = [
             account,
             campaign,
