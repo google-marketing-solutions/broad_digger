@@ -100,14 +100,10 @@ function processSingleAccountSearchTerm( ) {
 
   const custom = { };
 
-  // const campaignStrategyMap = { };
-  // campaignStrategyMap[accountName] = {};
+  const QUERY_TIME_CONDITION = getTimeConstraint();
+  const QUERY_KEYWORD_CONDITION = getKeywordCondition();
 
-
-  QUERY_VARIABLES_SEARCH_TERM.WHERE += getTimeConstraint();
-  QUERY_VARIABLES_SEARCH_TERM.WHERE += getKeywordCondition();
-
-  const QUERY = `${QUERY_VARIABLES_SEARCH_TERM.SELECT} ${QUERY_VARIABLES_SEARCH_TERM.WHERE} ${QUERY_VARIABLES_SEARCH_TERM.ORDER} `;
+  const QUERY = `${QUERY_VARIABLES_SEARCH_TERM.SELECT} ${QUERY_VARIABLES_SEARCH_TERM.WHERE} ${QUERY_TIME_CONDITION} ${QUERY_KEYWORD_CONDITION} ${QUERY_VARIABLES_SEARCH_TERM.ORDER} `;
   const searchTermAdGroupIterator = AdsApp.search(QUERY , REPORTING_OPTIONS );
 
   Logger.log(QUERY);
@@ -119,8 +115,6 @@ function processSingleAccountSearchTerm( ) {
     const outputRecord = createOutputRecordSearchTerm( currentSearchTermAdGroup );
     addResultEntrySearchTerm( searchTerm[accountName], outputRecord );
     addResultEntrySearchTermCustom( custom, outputRecord );
-
-    // campaignStrategyMap[accountName][outputRecord.campaignName] = outputRecord.biddingStrategy;
 
   } // End of iteration over campaigns
 
