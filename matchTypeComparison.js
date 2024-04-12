@@ -103,9 +103,9 @@ function processSingleAccountMatchType() {
   campaignStrategyMap[accountName] = {};
 
 
-  QUERY_VARIABLES_MATCH_TYPE.WHERE += getTimeConstraint();
+  const QUERY_TIME_CONDITION = getTimeConstraint();
 
-  const QUERY =   `${QUERY_VARIABLES_MATCH_TYPE.SELECT} ${QUERY_VARIABLES_MATCH_TYPE.WHERE} ${QUERY_VARIABLES_MATCH_TYPE.ORDER} `;
+  const QUERY = `${QUERY_VARIABLES_MATCH_TYPE.SELECT} ${QUERY_VARIABLES_MATCH_TYPE.WHERE} ${QUERY_TIME_CONDITION} ${QUERY_VARIABLES_MATCH_TYPE.ORDER} `;
   const keywordAdGroupIterator = AdsApp.search(QUERY , REPORTING_OPTIONS );
 
   Logger.log(QUERY);
@@ -237,7 +237,6 @@ function writeRecordsInSpreadSheetMatchType( matchType ) {
 
         const currentElement = matchType[account][campaign][keywordText];
 
-        // TODO: Uncomment the check below
         // Skip this keyword if it hasn't at least 2 match types
         if( !currentElement || currentElement.matchType.length < 2 ||
           currentElement.matchType.indexOf('BROAD') === -1 ) {
