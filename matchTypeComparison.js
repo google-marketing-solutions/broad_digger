@@ -125,7 +125,7 @@ function processSingleAccountMatchType() {
 
   // Add to the spreadsheet the records
   writeRecordsInSpreadSheetMatchType( matchType );
-  writeAggregated( campaignStrategyMap ),
+  writeAggregated( campaignStrategyMap );
   writeRecordsInSpreadSheetCustom( custom );
 
   Logger.log(`Completed proccessing for account ${accountName} `);
