@@ -83,7 +83,7 @@ function processMCCaccountSearchTerm(){
     AdsManagerApp.select( currentAccount );
 
     // Get records for current account
-    processSingleAccount( currentAccount.getCustomerId() );
+    processSingleAccountSearchTerm( currentAccount.getCustomerId() );
   }
 }
 
