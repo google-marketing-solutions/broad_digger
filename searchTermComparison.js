@@ -100,13 +100,15 @@ function processSingleAccountSearchTerm( ) {
 
   const custom = { };
 
-  const QUERY_TIME_CONDITION = getTimeConstraint();
-  const QUERY_KEYWORD_CONDITION = getKeywordCondition();
+  // const campaignStrategyMap = { };
+  // campaignStrategyMap[accountName] = {};
 
-  const QUERY = `${QUERY_VARIABLES_SEARCH_TERM.SELECT} ${QUERY_VARIABLES_SEARCH_TERM.WHERE} ${QUERY_TIME_CONDITION} ${QUERY_KEYWORD_CONDITION} ${QUERY_VARIABLES_SEARCH_TERM.ORDER} `;
+
+  QUERY_VARIABLES_SEARCH_TERM.WHERE += getTimeConstraint();
+  QUERY_VARIABLES_SEARCH_TERM.WHERE += getKeywordCondition();
+
+  const QUERY = `${QUERY_VARIABLES_SEARCH_TERM.SELECT} ${QUERY_VARIABLES_SEARCH_TERM.WHERE} ${QUERY_VARIABLES_SEARCH_TERM.ORDER} `;
   const searchTermAdGroupIterator = AdsApp.search(QUERY , REPORTING_OPTIONS );
-
-  Logger.log(QUERY);
 
   // Iterate over all ad Groups of current account
   while ( searchTermAdGroupIterator.hasNext() ) {
@@ -116,17 +118,19 @@ function processSingleAccountSearchTerm( ) {
     addResultEntrySearchTerm( searchTerm[accountName], outputRecord );
     addResultEntrySearchTermCustom( custom, outputRecord );
 
+    // campaignStrategyMap[accountName][outputRecord.campaignName] = outputRecord.biddingStrategy;
+
   } // End of iteration over campaigns
 
   writeRecordsInSpreadSheetSearchTerm( searchTerm );
   writeRecordsInCustomSpreadSheetSearchTerm( custom );
 
-  Logger.log(`Completed proccessing for account ${accountName} `);
+  Logger.log(`Completed processing for account ${accountName} `);
 }
 
 
 /**
- * Adds result to searchTerm as nested properties. We are using this appraoch in order to simplify the aggregation of the keywords data.
+ * Adds result to searchTerm as nested properties. We are using this approach in order to simplify the aggregation of the keywords data.
  *
  * @param {!object} searchTerm: Main object that contains, as properties the data of the users keywords
  * @param {!object} outputRecord: current search Term in the ad group being processed
@@ -332,11 +336,14 @@ function  writeRecordsInCustomSpreadSheetSearchTerm( custom ){
   const sheet = getSheet( SPREADSHEET_VARIABLES_SEARCH_TERM_CUSTOM.OUTPUT_SHEET_NAME );
   // sheet.getRange(sheet.getLastRow() + 1, 1, records.length, records[0].length).setValues( records );
   let rowIndex = sheet.getLastRow();
+  const rowsToStore = []
   for( const searchTerm in custom ) {
 
     const spreadsheetCurrentRow = entryToCustomSpreadsheetRecordSearchTerm( custom[searchTerm], searchTerm  );
-
-    sheet.getRange( ++rowIndex, 1, 1, spreadsheetCurrentRow.length).setValues( [ spreadsheetCurrentRow ] );
+    rowsToStore.push(spreadsheetCurrentRow);
+  }
+  if(rowsToStore.length > 0){
+      sheet.getRange( 1 + sheet.getLastRow(), 1, rowsToStore.length, rowsToStore[0].length).setValues(rowsToStore);
   }
 }
 
@@ -354,17 +361,20 @@ function writeRecordsInSpreadSheetSearchTerm( searchTerm ) {
 
   const sheet = getSheet( SPREADSHEET_VARIABLES_SEARCH_TERM.OUTPUT_SHEET_NAME );
 
-  let rowIndex = sheet.getLastRow();
   for( const account in searchTerm ) {
+    const rowsToStore = [];
     for( const campaign in searchTerm[account] ) {
       for( const keywordText in searchTerm[account][campaign] ) {
           for( const searchTermValue in searchTerm[account][campaign][keywordText] ) {
 
             const spreadsheetCurrentRow = entryToSpreadsheetRecordSearchTerm( searchTerm[account][campaign][keywordText][searchTermValue], account, campaign, keywordText, searchTermValue );
 
-            sheet.getRange( ++rowIndex, 1, 1, spreadsheetCurrentRow.length).setValues( [ spreadsheetCurrentRow ] );
+            rowsToStore.push(spreadsheetCurrentRow);
           }
       }
+    }
+    if(rowsToStore.length > 0){
+      sheet.getRange( 1 + sheet.getLastRow(), 1, rowsToStore.length, rowsToStore[0].length).setValues(rowsToStore);
     }
   }
 }
