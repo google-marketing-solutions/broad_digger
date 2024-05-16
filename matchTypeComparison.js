@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+
 const QUERY_VARIABLES_MATCH_TYPE = {
   SELECT : ' SELECT campaign.bidding_strategy_type, ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type, campaign.name, campaign.id, metrics.impressions, metrics.conversions, metrics.clicks, metrics.conversions_value, metrics.average_cost FROM keyword_view ',
   WHERE : ' WHERE ad_group_criterion.keyword.text != "" AND metrics.impressions > 0 ',
@@ -103,12 +105,10 @@ function processSingleAccountMatchType() {
   campaignStrategyMap[accountName] = {};
 
 
-  const QUERY_TIME_CONDITION = getTimeConstraint();
+  QUERY_VARIABLES_MATCH_TYPE.WHERE += getTimeConstraint();
 
-  const QUERY = `${QUERY_VARIABLES_MATCH_TYPE.SELECT} ${QUERY_VARIABLES_MATCH_TYPE.WHERE} ${QUERY_TIME_CONDITION} ${QUERY_VARIABLES_MATCH_TYPE.ORDER} `;
+  const QUERY =   `${QUERY_VARIABLES_MATCH_TYPE.SELECT} ${QUERY_VARIABLES_MATCH_TYPE.WHERE} ${QUERY_VARIABLES_MATCH_TYPE.ORDER} `;
   const keywordAdGroupIterator = AdsApp.search(QUERY , REPORTING_OPTIONS );
-
-  Logger.log(QUERY);
 
   // Iterate over all ad Groups of current account
   while ( keywordAdGroupIterator.hasNext() ) {
@@ -122,15 +122,15 @@ function processSingleAccountMatchType() {
     campaignStrategyMap[accountName][outputRecord.campaignName] = outputRecord.biddingStrategy;
 
   } // End of iteration over campaigns
-
+  
   // Add to the spreadsheet the records
   writeRecordsInSpreadSheetMatchType( matchType );
   writeAggregated( campaignStrategyMap );
+  Logger.log("Processing writeRecordsInSpreadSheetCustom")
   writeRecordsInSpreadSheetCustom( custom );
-
   Logger.log(`Completed proccessing for account ${accountName} `);
 }
-
+ 
 
 /**
  * given an adgroup it parses in an object that contains the required information
@@ -189,10 +189,10 @@ function createOutputRecordMatchType( currentKeywordAdGroup ){
 
 
 /**
- * Adds result to mainObj as nested properties. We are using this appraoch in order to simplify the aggregation of the keywords data.
+ * Adds result to mainObj as nested properties. We are using this approach in order to simplify the aggregation of the keywords data.
  *
  * @param {string} matchType: Match type of the keyword
- * @param {!object} outputRecord: object that mappes all the records 
+ * @param {!object} outputRecord: object that maps all the records 
  */
 function addResultEntryMatchType( matchType, outputRecord ) {
 
@@ -230,8 +230,8 @@ function writeRecordsInSpreadSheetMatchType( matchType ) {
   }
   const sheet = getSheet( SPREADSHEET_VARIABLES_MATCH_TYPE.OUTPUT_SHEET_NAME );
   // sheet.getRange(sheet.getLastRow() + 1, 1, records.length, records[0].length).setValues( records );
-  let rowIndex = sheet.getLastRow();
   for( const account in matchType ) {
+    const rowsToStore = [];
     for( const campaign in matchType[account] ) {
       for( const keywordText in matchType[account][campaign] ) {
 
@@ -272,9 +272,12 @@ function writeRecordsInSpreadSheetMatchType( matchType ) {
            currentElement['conversions_value_phrase'],
            currentElement['cost_phrase']
           ];
-
-        sheet.getRange( ++rowIndex, 1, 1, spreadsheetCurrentRow.length).setValues( [ spreadsheetCurrentRow ] );
+        rowsToStore.push(spreadsheetCurrentRow);
       }
+    }
+
+    if(rowsToStore.length > 0){
+      sheet.getRange( 1 + sheet.getLastRow(), 1, rowsToStore.length, rowsToStore[0].length).setValues(rowsToStore);
     }
   }
 }
@@ -305,6 +308,7 @@ function addResultEntryCustom( custom, outputRecord ) {
     conversionValue: outputRecord.conversionValue,
     cost: outputRecord.cost
   };
+
 }
 
 /**
@@ -321,10 +325,11 @@ function writeRecordsInSpreadSheetCustom( custom ) {
 
   const sheetCustom = getSheet( SPREADSHEET_VARIABLES_MATCH_TYPE_CUSTOM.OUTPUT_SHEET_NAME );
   const sheetAggregated = getSheet( SPREADSHEET_VARIABLES_MATCH_TYPE_AGGREGATED.OUTPUT_SHEET_NAME );
-  let rowIndexCustom = sheetCustom.getLastRow();
-  let rowIndexAggregated = sheetAggregated.getLastRow();
+
 
   for( const account in custom ) {
+    const rowsToStoreCustom = [];
+    const rowsToStoreAggregated = []; 
     for( const campaign in custom[account] ) {
       for( const keywordText in custom[account][campaign] ) {
         for( const matchType in custom[account][campaign][keywordText] ) {
@@ -343,23 +348,28 @@ function writeRecordsInSpreadSheetCustom( custom ) {
             currentElement[matchType].conversionValue,
             currentElement[matchType].cost
           ];
-
-          sheetAggregated.getRange( ++rowIndexAggregated, 1, 1, spreadsheetCurrentRow.length).setValues( [ spreadsheetCurrentRow ] );
+          rowsToStoreAggregated.push(spreadsheetCurrentRow);
 
           // Skip this keyword if it hasn't at least 2 match types
-          if( !currentElement|| Object.keys( currentElement ).length < 2 ||
-            Object.keys( currentElement ).indexOf('BROAD') === -1 ) {
+          if( !currentElement|| Object.keys( custom[account][campaign][keywordText] ).length < 2 ||
+            Object.keys( custom[account][campaign][keywordText] ).indexOf('BROAD') === -1) {
             continue;
           }
-          sheetCustom.getRange( ++rowIndexCustom, 1, 1, spreadsheetCurrentRow.length).setValues( [ spreadsheetCurrentRow ] );
+          rowsToStoreCustom.push(spreadsheetCurrentRow);
         }
       }
+    }
+    if(rowsToStoreCustom.length > 0){
+      sheetCustom.getRange( 1 + sheetCustom.getLastRow(), 1, rowsToStoreCustom.length, rowsToStoreCustom[0].length).setValues(rowsToStoreCustom);
+    }
+    if(rowsToStoreAggregated.length > 0){
+      sheetAggregated.getRange( 1 + sheetAggregated.getLastRow(), 1, rowsToStoreAggregated.length, rowsToStoreAggregated[0].length).setValues(rowsToStoreAggregated);
     }
   }
 }
 
 /**
- * Writes the information baout account, campaigns and bid strategies in the spreadsheet.
+ * Writes the information about account, campaigns and bid strategies in the spreadsheet.
  * @param {!object} campaignStrategyMap: mapping of account -> campaign -> campaign strategy
  *
  */
@@ -370,7 +380,7 @@ function writeAggregated( campaignStrategyMap ) {
   }
 
   const sheet = getSheet( SPREADSHEET_VARIABLES.CAMPAIGN_SHEET_NAME );
-  let rowIndex = sheet.getLastRow();
+  const rowsToStore = [];
 
   for( const account in campaignStrategyMap ) {
     for( const campaign in campaignStrategyMap[account] ) {
@@ -380,7 +390,10 @@ function writeAggregated( campaignStrategyMap ) {
         campaignStrategyMap[account][campaign]
       ];
 
-      sheet.getRange( ++rowIndex, 1, 1, spreadsheetCurrentRow.length).setValues( [ spreadsheetCurrentRow ] );
+      rowsToStore.push(spreadsheetCurrentRow);
     }
   }
+    if(rowsToStore.length > 0){
+      sheet.getRange( 1 + sheet.getLastRow(), 1, rowsToStore.length, rowsToStore[0].length).setValues(rowsToStore);
+    }
 }
