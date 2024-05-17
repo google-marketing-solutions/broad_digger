@@ -65,12 +65,16 @@ function writeCampaignStrategyInSpreadSheet( campaignStrategyMap ) {
   }
   const sheet = getSheet( SPREADSHEET_VARIABLES.CAMPAIGN_SHEET_NAME );
   // sheet.getRange(sheet.getLastRow() + 1, 1, records.length, records[0].length).setValues( records );
+  const rowsToStore = []
   let rowIndex = sheet.getLastRow();
   for( const account in campaignStrategyMap ) {
     for( const campaign in campaignStrategyMap[account] ) {
       const record = [ account, campaign, campaignStrategyMap[account][campaign] ] ;
-      sheet.getRange( ++rowIndex, 1, 1, record.length).setValues( [record] );
+      rowsToStore.push(record);   
     }
+  }
+  if(rowsToStore.length > 0){
+    sheet.getRange( 1 + sheet.getLastRow(), 1, rowsToStore.length, rowsToStore[0].length).setValues(rowsToStore);
   }
 }
 
