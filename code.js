@@ -18,7 +18,7 @@ const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24; /** this variable is used to c
 
 const REPORTING_OPTIONS = {
   // Comment out the following line to default to the latest reporting version.
-  apiVersion: 'v15'
+  apiVersion: 'v18'
 };
 
 
